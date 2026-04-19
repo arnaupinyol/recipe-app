@@ -1,0 +1,17 @@
+* text=auto
+
+*.rb text eol=lf
+*.rake text eol=lf
+*.ru text eol=lf
+Gemfile text eol=lf
+Gemfile.lock text eol=lf
+Rakefile text eol=lf
+Dockerfile text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.sh text eol=lf
+
+backend/bin/* text eol=lf
+backend/.kamal/hooks/* text eol=lf
+
+*.png binary

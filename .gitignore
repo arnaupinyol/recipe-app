@@ -1,0 +1,39 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Logs
+*.log
+
+# Rails backend
+/backend/.bundle/
+/backend/vendor/bundle/
+/backend/log/*
+!/backend/log/.keep
+/backend/tmp/*
+!/backend/tmp/.keep
+/backend/storage/*
+!/backend/storage/.keep
+/backend/public/assets/
+/backend/public/packs/
+/backend/coverage/
+/backend/config/master.key
+/backend/config/credentials/*.key
+
+# Flutter frontend
+/frontend/.dart_tool/
+/frontend/.flutter-plugins
+/frontend/.flutter-plugins-dependencies
+/frontend/build/
+/frontend/coverage/
+
+# Docker
+docker-compose.override.yml
