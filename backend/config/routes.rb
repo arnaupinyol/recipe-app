@@ -1,6 +1,13 @@
 Rails.application.routes.draw do
   namespace :api do
     get "status", to: "status#show"
+
+    namespace :auth do
+      post "register", to: "registrations#create"
+      post "login", to: "sessions#create"
+      delete "logout", to: "sessions#destroy"
+      get "me", to: "me#show"
+    end
   end
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html

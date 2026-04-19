@@ -37,3 +37,19 @@ Rails will be available at:
 ```text
 http://localhost:3000
 ```
+
+## Current API endpoints
+
+```text
+GET    /api/status
+POST   /api/auth/register
+POST   /api/auth/login
+GET    /api/auth/me
+DELETE /api/auth/logout
+```
+
+Authenticated requests must include:
+
+```text
+Authorization: Bearer <token>
+```
