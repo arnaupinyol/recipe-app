@@ -7,7 +7,8 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
         username: "arnau",
         email: "arnau@example.com",
         password: "password123",
-        password_confirmation: "password123"
+        password_confirmation: "password123",
+        language: "ca"
       }
     }, as: :json
 
@@ -30,7 +31,7 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
     post "/api/auth/login", params: {
       user: {
         email: "login@example.com",
-        password: "password123"
+        password: "password123",
       }
     }, as: :json
 
@@ -42,6 +43,26 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
   end
 
   test "returns current user with a valid token" do
+    User.create!(
+      username: "login_cat",
+      email: "logincat@example.com",
+      password: "password123",
+      password_confirmation: "password123"
+    )
+
+    post "/api/auth/login", params: {
+      user: {
+        email: "logincat@example.com",
+        password: "password123"
+      }
+    }, as: :json
+
+    assert_response :success
+
+    response_body = JSON.parse(response.body)
+    assert response_body["token"].present?
+    assert_equal "login_cat", response_body.dig("user", "username")
+
     user = User.create!(
       username: "current_user",
       email: "current@example.com",

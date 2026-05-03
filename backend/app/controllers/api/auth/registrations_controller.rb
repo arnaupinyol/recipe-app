@@ -14,13 +14,7 @@ module Api
       private
 
       def registration_params
-        params.require(:user).permit(
-          :username,
-          :email,
-          :password,
-          :password_confirmation,
-          :language
-        )
+        params.require(:user).permit(:username, :email, :password, :password_confirmation, :language)
       end
 
       def auth_payload(user)

@@ -3,7 +3,7 @@ require "test_helper"
 module Api
   class StatusControllerTest < ActionDispatch::IntegrationTest
     test "returns api status" do
-      get api_status_url
+      get "/api/status"
 
       assert_response :success
 

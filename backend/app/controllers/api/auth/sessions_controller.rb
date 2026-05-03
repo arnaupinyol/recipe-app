@@ -5,8 +5,9 @@ module Api
 
       def create
         user = User.find_by(email: login_params[:email].to_s.strip.downcase)
+        secret = login_params[:password]
 
-        if user&.authenticate(login_params[:password])
+        if user&.authenticate(secret)
           return render_error("Account is not active", status: :forbidden) unless user.active?
 
           render_success(auth_payload(user))
