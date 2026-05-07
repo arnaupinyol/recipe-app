@@ -1,7 +1,7 @@
 class Recipe < ApplicationRecord
   belongs_to :user, inverse_of: :recipes
 
-  has_and_belongs_to_many :categories, join_table: :categories_recipes
+  has_and_belongs_to_many :categories, class_name: "Category", join_table: :categories_recipes
   has_and_belongs_to_many :utensils, join_table: :recipes_utensils
 
   has_many :comments, dependent: :destroy, inverse_of: :recipe

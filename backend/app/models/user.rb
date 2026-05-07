@@ -1,7 +1,7 @@
 class User < ApplicationRecord
   has_secure_password
 
-  has_and_belongs_to_many :allergies
+  has_and_belongs_to_many :allergies, class_name: "Allergy"
 
   has_many :blocks_as_blocker, class_name: "Block", foreign_key: :blocker_id, dependent: :destroy,
                                inverse_of: :blocker
