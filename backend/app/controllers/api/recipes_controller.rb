@@ -1,9 +1,11 @@
 module Api
   class RecipesController < BaseController
+    before_action :authenticate_user!, only: [ :create, :update, :destroy ]
     before_action :set_recipe, only: [ :show, :update, :destroy ]
+    before_action :authorize_recipe_modification!, only: [ :update, :destroy ]
 
     def index
-      recipes = Recipe.includes(:user, :categories, :utensils).order(created_at: :desc)
+      recipes = visible_recipes_relation.includes(:user, :categories, :utensils).order(created_at: :desc)
 
       render_success({ recipes: recipes.map { |recipe| RecipeSerializer.render(recipe) } })
     end
@@ -13,7 +15,7 @@ module Api
     end
 
     def create
-      recipe = Recipe.new(recipe_attributes)
+      recipe = current_user.recipes.new(recipe_attributes)
       assign_recipe_relations(recipe)
 
       if recipe.save
@@ -45,8 +47,14 @@ module Api
 
     private
 
+    def authorize_recipe_modification!
+      return if current_user&.admin? || @recipe.user_id == current_user.id
+
+      render_forbidden
+    end
+
     def set_recipe
-      @recipe = Recipe.includes(:user, :categories, :utensils).find_by(id: params[:id])
+      @recipe = visible_recipes_relation.includes(:user, :categories, :utensils).find_by(id: params[:id])
       return if @recipe
 
       render_error("Recipe not found", status: :not_found)
@@ -54,7 +62,6 @@ module Api
 
     def recipe_params
       params.require(:recipe).permit(
-        :user_id,
         :title,
         :description,
         :preparation_time_minutes,
@@ -81,17 +88,11 @@ module Api
 
     def normalized_recipe_errors(recipe)
       details = recipe.errors.to_hash
-
-      if details.delete(:user) == [ "must exist" ]
-        details[:user_id] = [ "contains an invalid value" ]
-      end
-
       details
     end
 
     def invalid_relation_details
       details = {}
-      details[:user_id] = [ "contains an invalid value" ] if params.dig(:recipe, :user_id).present? && !User.exists?(id: params.dig(:recipe, :user_id))
 
       category_ids = Array(params.dig(:recipe, :category_ids)).reject(&:blank?)
       if category_ids.any? && Category.where(id: category_ids).count != category_ids.size

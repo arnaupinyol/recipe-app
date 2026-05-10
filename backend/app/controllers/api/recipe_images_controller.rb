@@ -1,9 +1,11 @@
 module Api
   class RecipeImagesController < BaseController
+    before_action :authenticate_user!, only: [ :create, :update, :destroy ]
     before_action :set_recipe_image, only: [ :show, :update, :destroy ]
+    before_action :authorize_recipe_image_modification!, only: [ :update, :destroy ]
 
     def index
-      recipe_images = RecipeImage.includes(:recipe).order(:recipe_id, :id)
+      recipe_images = visible_recipe_images_scope.order(:recipe_id, :id)
 
       render_success({ recipe_images: recipe_images.map { |recipe_image| RecipeImageSerializer.render(recipe_image) } })
     end
@@ -13,6 +15,8 @@ module Api
     end
 
     def create
+      return unless ensure_editable_recipe_param!("Recipe image creation failed")
+
       recipe_image = RecipeImage.new(recipe_image_params)
 
       if recipe_image.save
@@ -23,6 +27,8 @@ module Api
     end
 
     def update
+      return unless ensure_editable_recipe_param!("Recipe image update failed")
+
       if @recipe_image.update(recipe_image_params)
         render_success({ recipe_image: RecipeImageSerializer.render(@recipe_image) })
       else
@@ -37,8 +43,26 @@ module Api
 
     private
 
+    def visible_recipe_images_scope
+      RecipeImage.includes(:recipe).joins(:recipe).merge(visible_recipes_relation)
+    end
+
+    def authorize_recipe_image_modification!
+      return if current_user&.admin? || @recipe_image.recipe.user_id == current_user.id
+
+      render_forbidden
+    end
+
+    def ensure_editable_recipe_param!(message)
+      recipe_id = params.dig(:recipe_image, :recipe_id)
+      return true if recipe_id.blank? || editable_recipes_relation.where(id: recipe_id).exists?
+
+      render_error(message, details: { recipe_id: [ "contains an invalid value" ] })
+      false
+    end
+
     def set_recipe_image
-      @recipe_image = RecipeImage.includes(:recipe).find_by(id: params[:id])
+      @recipe_image = visible_recipe_images_scope.find_by(id: params[:id])
       return if @recipe_image
 
       render_error("Recipe image not found", status: :not_found)

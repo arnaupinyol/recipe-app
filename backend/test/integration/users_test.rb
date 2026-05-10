@@ -1,16 +1,7 @@
 require "test_helper"
 
 class UsersTest < ActionDispatch::IntegrationTest
-  def create_user(username:, email:)
-    User.create!(
-      username: username,
-      email: email,
-      password: "password123",
-      password_confirmation: "password123"
-    )
-  end
-
-  test "lists users" do
+  test "lists users without exposing private fields" do
     user_1 = create_user(username: "user_list_1", email: "user.list.1@example.com")
     user_2 = create_user(username: "user_list_2", email: "user.list.2@example.com")
     allergy = Allergy.create!(name: "Gluten")
@@ -20,14 +11,15 @@ class UsersTest < ActionDispatch::IntegrationTest
 
     assert_response :success
 
-    response_body = JSON.parse(response.body)
-    assert_equal 2, response_body["users"].length
-    assert_equal [ "gluten" ], response_body["users"].find { |item| item["id"] == user_1.id }.fetch("allergies").map { |item| item["name"].downcase }
-    assert_equal [ user_1.username, user_2.username ].sort, response_body["users"].map { |item| item["username"] }
+    listed_user = response_json["users"].find { |item| item["id"] == user_1.id }
+    assert_equal [ user_1.username, user_2.username ].sort, response_json["users"].map { |item| item["username"] }
+    assert_nil listed_user["email"]
+    assert_nil listed_user["allergies"]
+    assert_nil listed_user["role"]
   end
 
-  test "shows a user" do
-    user = create_user(username: "user_show", email: "user.show@example.com")
+  test "shows a public user profile without private fields" do
+    user = create_user(username: "user_show", email: "user.show@example.com", bio: "Cook")
     allergy = Allergy.create!(name: "Lactose")
     user.allergies << allergy
 
@@ -35,13 +27,28 @@ class UsersTest < ActionDispatch::IntegrationTest
 
     assert_response :success
 
-    response_body = JSON.parse(response.body)
-    assert_equal user.username, response_body.dig("user", "username")
-    assert_equal [ allergy.id ], response_body.dig("user", "allergy_ids")
-    assert_equal [ "Lactose" ], response_body.dig("user", "allergies").map { |item| item["name"] }
+    assert_equal user.username, response_json.dig("user", "username")
+    assert_equal "Cook", response_json.dig("user", "bio")
+    assert_nil response_json.dig("user", "email")
+    assert_nil response_json.dig("user", "allergies")
   end
 
-  test "creates a user" do
+  test "shows private fields to the same authenticated user" do
+    user = create_user(username: "user_private", email: "user.private@example.com", language: "es")
+    allergy = Allergy.create!(name: "Peanut")
+    user.allergies << allergy
+
+    get "/api/users/#{user.id}", headers: auth_headers_for(user)
+
+    assert_response :success
+
+    assert_equal "user.private@example.com", response_json.dig("user", "email")
+    assert_equal "es", response_json.dig("user", "language")
+    assert_equal [ allergy.id ], response_json.dig("user", "allergy_ids")
+  end
+
+  test "allows staff to create a user" do
+    admin = create_user(username: "admin_user", email: "admin@example.com", role: :admin)
     allergy = Allergy.create!(name: "Egg")
 
     post "/api/users", params: {
@@ -59,18 +66,33 @@ class UsersTest < ActionDispatch::IntegrationTest
         role: "moderator",
         allergy_ids: [ allergy.id ]
       }
-    }, as: :json
+    }, headers: auth_headers_for(admin), as: :json
 
     assert_response :created
 
-    response_body = JSON.parse(response.body)
-    assert_equal "arnau_user", response_body.dig("user", "username")
-    assert_equal "arnau.user@example.com", response_body.dig("user", "email")
-    assert_equal [ allergy.id ], response_body.dig("user", "allergy_ids")
-    assert_equal "moderator", response_body.dig("user", "role")
+    assert_equal "arnau_user", response_json.dig("user", "username")
+    assert_equal "arnau.user@example.com", response_json.dig("user", "email")
+    assert_equal [ allergy.id ], response_json.dig("user", "allergy_ids")
+    assert_equal "moderator", response_json.dig("user", "role")
   end
 
-  test "updates a user" do
+  test "rejects user creation for non staff users" do
+    user = create_user(username: "plain_user", email: "plain.user@example.com")
+
+    post "/api/users", params: {
+      user: {
+        username: "new_user",
+        email: "new.user@example.com",
+        password: "password123",
+        password_confirmation: "password123"
+      }
+    }, headers: auth_headers_for(user), as: :json
+
+    assert_response :forbidden
+    assert_equal "Forbidden", response_json.dig("error", "message")
+  end
+
+  test "updates the current user without allowing role escalation" do
     user = create_user(username: "user_update", email: "user.update@example.com")
     allergy = Allergy.create!(name: "Peanut")
 
@@ -80,29 +102,43 @@ class UsersTest < ActionDispatch::IntegrationTest
         language: "es",
         private_profile: true,
         notifications_enabled: false,
+        role: "admin",
         allergy_ids: [ allergy.id ]
       }
-    }, as: :json
+    }, headers: auth_headers_for(user), as: :json
 
     assert_response :success
 
-    response_body = JSON.parse(response.body)
-    assert_equal "Updated bio", response_body.dig("user", "bio")
-    assert_equal "es", response_body.dig("user", "language")
-    assert_equal true, response_body.dig("user", "private_profile")
-    assert_equal false, response_body.dig("user", "notifications_enabled")
-    assert_equal [ allergy.id ], response_body.dig("user", "allergy_ids")
+    assert_equal "Updated bio", response_json.dig("user", "bio")
+    assert_equal "es", response_json.dig("user", "language")
+    assert_equal true, response_json.dig("user", "private_profile")
+    assert_equal false, response_json.dig("user", "notifications_enabled")
+    assert_equal [ allergy.id ], response_json.dig("user", "allergy_ids")
+    assert_equal "user", user.reload.role
   end
 
-  test "deletes a user" do
+  test "prevents updating another user without admin role" do
+    user = create_user(username: "user_one", email: "user.one@example.com")
+    other_user = create_user(username: "user_two", email: "user.two@example.com")
+
+    patch "/api/users/#{other_user.id}", params: {
+      user: {
+        bio: "Intrusion"
+      }
+    }, headers: auth_headers_for(user), as: :json
+
+    assert_response :forbidden
+    assert_equal "Forbidden", response_json.dig("error", "message")
+  end
+
+  test "deletes the current user" do
     user = create_user(username: "user_delete", email: "user.delete@example.com")
 
-    delete "/api/users/#{user.id}"
+    delete "/api/users/#{user.id}", headers: auth_headers_for(user)
 
     assert_response :success
 
-    response_body = JSON.parse(response.body)
-    assert_equal "User deleted", response_body["message"]
+    assert_equal "User deleted", response_json["message"]
     assert_not User.exists?(user.id)
   end
 
@@ -110,12 +146,12 @@ class UsersTest < ActionDispatch::IntegrationTest
     get "/api/users/999999"
 
     assert_response :not_found
-
-    response_body = JSON.parse(response.body)
-    assert_equal "User not found", response_body.dig("error", "message")
+    assert_equal "User not found", response_json.dig("error", "message")
   end
 
-  test "returns validation errors when user is invalid" do
+  test "returns validation errors when created user is invalid" do
+    admin = create_user(username: "admin_invalid", email: "admin.invalid@example.com", role: :admin)
+
     post "/api/users", params: {
       user: {
         username: "",
@@ -124,19 +160,20 @@ class UsersTest < ActionDispatch::IntegrationTest
         password_confirmation: "short",
         language: ""
       }
-    }, as: :json
+    }, headers: auth_headers_for(admin), as: :json
 
     assert_response :unprocessable_entity
 
-    response_body = JSON.parse(response.body)
-    assert_equal "User creation failed", response_body.dig("error", "message")
-    assert response_body.dig("error", "details", "username").present?
-    assert response_body.dig("error", "details", "email").present?
-    assert response_body.dig("error", "details", "password").present?
-    assert response_body.dig("error", "details", "language").present?
+    assert_equal "User creation failed", response_json.dig("error", "message")
+    assert response_json.dig("error", "details", "username").present?
+    assert response_json.dig("error", "details", "email").present?
+    assert response_json.dig("error", "details", "password").present?
+    assert response_json.dig("error", "details", "language").present?
   end
 
-  test "returns validation errors when user allergies are invalid" do
+  test "returns validation errors when created user allergies are invalid" do
+    admin = create_user(username: "admin_allergy", email: "admin.allergy@example.com", role: :admin)
+
     post "/api/users", params: {
       user: {
         username: "user_invalid_allergies",
@@ -145,12 +182,11 @@ class UsersTest < ActionDispatch::IntegrationTest
         password_confirmation: "password123",
         allergy_ids: [ 999999 ]
       }
-    }, as: :json
+    }, headers: auth_headers_for(admin), as: :json
 
     assert_response :unprocessable_entity
 
-    response_body = JSON.parse(response.body)
-    assert_equal "User creation failed", response_body.dig("error", "message")
-    assert_equal [ "contain invalid values" ], response_body.dig("error", "details", "allergy_ids")
+    assert_equal "User creation failed", response_json.dig("error", "message")
+    assert_equal [ "contain invalid values" ], response_json.dig("error", "details", "allergy_ids")
   end
 end

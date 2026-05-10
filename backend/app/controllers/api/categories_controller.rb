@@ -1,5 +1,7 @@
 module Api
   class CategoriesController < BaseController
+    before_action :authenticate_user!, only: [ :create, :update, :destroy ]
+    before_action :require_staff!, only: [ :create, :update, :destroy ]
     before_action :set_category, only: [ :show, :update, :destroy ]
 
     def index

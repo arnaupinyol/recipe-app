@@ -102,4 +102,19 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
     response_body = JSON.parse(response.body)
     assert_equal "Invalid email or password", response_body.dig("error", "message")
   end
+
+  test "logs out a user and revokes the current token" do
+    user = create_user(username: "logout_user", email: "logout@example.com")
+    token = JsonWebToken.encode(user_id: user.id)
+
+    delete "/api/auth/logout", headers: { "Authorization" => "Bearer #{token}" }
+
+    assert_response :success
+    assert_equal "Logged out", response_json["message"]
+
+    get "/api/auth/me", headers: { "Authorization" => "Bearer #{token}" }
+
+    assert_response :unauthorized
+    assert_equal "Unauthorized", response_json.dig("error", "message")
+  end
 end

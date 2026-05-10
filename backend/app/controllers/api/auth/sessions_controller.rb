@@ -17,6 +17,7 @@ module Api
       end
 
       def destroy
+        JsonWebToken.revoke!(current_token_payload)
         render_success({ message: "Logged out" })
       end
 
@@ -29,7 +30,7 @@ module Api
       def auth_payload(user)
         {
           token: JsonWebToken.encode(user_id: user.id),
-          user: UserSerializer.render(user)
+          user: UserSerializer.render(user, viewer: user)
         }
       end
     end

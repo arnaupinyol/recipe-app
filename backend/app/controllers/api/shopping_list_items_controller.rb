@@ -1,9 +1,10 @@
 module Api
   class ShoppingListItemsController < BaseController
+    before_action :authenticate_user!
     before_action :set_shopping_list_item, only: [ :show, :update, :destroy ]
 
     def index
-      shopping_list_items = ShoppingListItem.includes(:ingredient, :shopping_list).order(:id)
+      shopping_list_items = shopping_list_items_scope.order(:id)
 
       render_success({ shopping_list_items: shopping_list_items.map { |item| ShoppingListItemSerializer.render(item) } })
     end
@@ -13,6 +14,8 @@ module Api
     end
 
     def create
+      return unless ensure_accessible_shopping_list!("Shopping list item creation failed")
+
       shopping_list_item = ShoppingListItem.new(shopping_list_item_params)
 
       if shopping_list_item.save
@@ -23,6 +26,8 @@ module Api
     end
 
     def update
+      return unless ensure_accessible_shopping_list!("Shopping list item update failed")
+
       if @shopping_list_item.update(shopping_list_item_params)
         render_success({ shopping_list_item: ShoppingListItemSerializer.render(@shopping_list_item) })
       else
@@ -37,8 +42,29 @@ module Api
 
     private
 
+    def shopping_list_items_scope
+      scope = ShoppingListItem.includes(:ingredient, :shopping_list)
+      return scope if current_user.admin?
+
+      scope.joins(:shopping_list).where(shopping_lists: { user_id: current_user.id })
+    end
+
+    def accessible_shopping_lists_scope
+      return ShoppingList.all if current_user.admin?
+
+      current_user.shopping_lists
+    end
+
+    def ensure_accessible_shopping_list!(message)
+      shopping_list_id = params.dig(:shopping_list_item, :shopping_list_id)
+      return true if shopping_list_id.blank? || accessible_shopping_lists_scope.where(id: shopping_list_id).exists?
+
+      render_error(message, details: { shopping_list_id: [ "contains an invalid value" ] })
+      false
+    end
+
     def set_shopping_list_item
-      @shopping_list_item = ShoppingListItem.includes(:ingredient, :shopping_list).find_by(id: params[:id])
+      @shopping_list_item = shopping_list_items_scope.find_by(id: params[:id])
       return if @shopping_list_item
 
       render_error("Shopping list item not found", status: :not_found)

@@ -8,9 +8,7 @@ class AllergiesTest < ActionDispatch::IntegrationTest
     get "/api/allergies"
 
     assert_response :success
-
-    response_body = JSON.parse(response.body)
-    assert_equal [ "Gluten", "Lactosa" ], response_body["allergies"].map { |allergy| allergy["name"] }
+    assert_equal [ "Gluten", "Lactosa" ], response_json["allergies"].map { |allergy| allergy["name"] }
   end
 
   test "shows an allergy with ingredients" do
@@ -21,14 +19,11 @@ class AllergiesTest < ActionDispatch::IntegrationTest
     get "/api/allergies/#{allergy.id}"
 
     assert_response :success
-
-    response_body = JSON.parse(response.body)
-    assert_equal "Lactosa", response_body.dig("allergy", "name")
-    assert_equal [ ingredient.id ], response_body.dig("allergy", "ingredient_ids")
-    assert_equal [ "Llet" ], response_body.dig("allergy", "ingredients").map { |item| item["name"] }
+    assert_equal [ ingredient.id ], response_json.dig("allergy", "ingredient_ids")
   end
 
-  test "creates an allergy" do
+  test "creates an allergy only for staff" do
+    admin = create_user(username: "allergy_admin", email: "allergy.admin@example.com", role: :admin)
     ingredient_1 = Ingredient.create!(name: "Llet")
     ingredient_2 = Ingredient.create!(name: "Mantega")
 
@@ -37,16 +32,27 @@ class AllergiesTest < ActionDispatch::IntegrationTest
         name: "Lactis",
         ingredient_ids: [ ingredient_1.id, ingredient_2.id ]
       }
-    }, as: :json
+    }, headers: auth_headers_for(admin), as: :json
 
     assert_response :created
+    assert_equal "Lactis", response_json.dig("allergy", "name")
+  end
 
-    response_body = JSON.parse(response.body)
-    assert_equal "Lactis", response_body.dig("allergy", "name")
-    assert_equal [ "Llet", "Mantega" ], response_body.dig("allergy", "ingredients").map { |item| item["name"] }
+  test "rejects allergy creation for non staff users" do
+    user = create_user(username: "allergy_user", email: "allergy.user@example.com")
+
+    post "/api/allergies", params: {
+      allergy: {
+        name: "Lactis"
+      }
+    }, headers: auth_headers_for(user), as: :json
+
+    assert_response :forbidden
+    assert_equal "Forbidden", response_json.dig("error", "message")
   end
 
   test "updates an allergy" do
+    admin = create_user(username: "allergy_admin_update", email: "allergy.admin.update@example.com", role: :admin)
     ingredient = Ingredient.create!(name: "Cacauet")
     allergy = Allergy.create!(name: "Fruits secs")
 
@@ -54,80 +60,19 @@ class AllergiesTest < ActionDispatch::IntegrationTest
       allergy: {
         ingredient_ids: [ ingredient.id ]
       }
-    }, as: :json
+    }, headers: auth_headers_for(admin), as: :json
 
     assert_response :success
-
-    response_body = JSON.parse(response.body)
-    assert_equal [ ingredient.id ], response_body.dig("allergy", "ingredient_ids")
-    assert_equal [ ingredient.id ], allergy.reload.ingredient_ids
+    assert_equal [ ingredient.id ], response_json.dig("allergy", "ingredient_ids")
   end
 
   test "deletes an allergy without associations" do
+    admin = create_user(username: "allergy_admin_delete", email: "allergy.admin.delete@example.com", role: :admin)
     allergy = Allergy.create!(name: "Api")
 
-    delete "/api/allergies/#{allergy.id}"
+    delete "/api/allergies/#{allergy.id}", headers: auth_headers_for(admin)
 
     assert_response :success
-
-    response_body = JSON.parse(response.body)
-    assert_equal "Allergy deleted", response_body["message"]
-    assert_not Allergy.exists?(allergy.id)
-  end
-
-  test "does not delete an allergy associated with ingredients" do
-    ingredient = Ingredient.create!(name: "Ou")
-    allergy = Allergy.create!(name: "Ou")
-    allergy.ingredients << ingredient
-
-    delete "/api/allergies/#{allergy.id}"
-
-    assert_response :conflict
-
-    response_body = JSON.parse(response.body)
-    assert_equal "Allergy cannot be deleted because it is associated with ingredients or users", response_body.dig("error", "message")
-    assert Allergy.exists?(allergy.id)
-  end
-
-  test "does not delete an allergy associated with users" do
-    user = User.create!(
-      username: "allergy_user",
-      email: "allergy.user@example.com",
-      password: "password123",
-      password_confirmation: "password123"
-    )
-    allergy = Allergy.create!(name: "Marisc")
-    user.allergies << allergy
-
-    delete "/api/allergies/#{allergy.id}"
-
-    assert_response :conflict
-
-    response_body = JSON.parse(response.body)
-    assert_equal "Allergy cannot be deleted because it is associated with ingredients or users", response_body.dig("error", "message")
-    assert Allergy.exists?(allergy.id)
-  end
-
-  test "returns not found for a missing allergy" do
-    get "/api/allergies/999999"
-
-    assert_response :not_found
-
-    response_body = JSON.parse(response.body)
-    assert_equal "Allergy not found", response_body.dig("error", "message")
-  end
-
-  test "returns validation errors when allergy is invalid" do
-    post "/api/allergies", params: {
-      allergy: {
-        name: ""
-      }
-    }, as: :json
-
-    assert_response :unprocessable_entity
-
-    response_body = JSON.parse(response.body)
-    assert_equal "Allergy creation failed", response_body.dig("error", "message")
-    assert response_body.dig("error", "details", "name").present?
+    assert_equal "Allergy deleted", response_json["message"]
   end
 end

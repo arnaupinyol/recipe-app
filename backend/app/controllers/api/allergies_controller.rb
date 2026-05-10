@@ -1,5 +1,7 @@
 module Api
   class AllergiesController < BaseController
+    before_action :authenticate_user!, only: [ :create, :update, :destroy ]
+    before_action :require_staff!, only: [ :create, :update, :destroy ]
     before_action :set_allergy, only: [ :show, :update, :destroy ]
 
     def index

@@ -4,7 +4,7 @@ module Api
       before_action :authenticate_user!
 
       def show
-        render_success({ user: UserSerializer.render(current_user) })
+        render_success({ user: UserSerializer.render(current_user, viewer: current_user) })
       end
     end
   end

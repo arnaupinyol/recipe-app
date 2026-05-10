@@ -1,9 +1,11 @@
 module Api
   class RecipeIngredientsController < BaseController
+    before_action :authenticate_user!, only: [ :create, :update, :destroy ]
     before_action :set_recipe_ingredient, only: [ :show, :update, :destroy ]
+    before_action :authorize_recipe_ingredient_modification!, only: [ :update, :destroy ]
 
     def index
-      recipe_ingredients = RecipeIngredient.includes(:recipe, :ingredient).order(:recipe_id, :id)
+      recipe_ingredients = visible_recipe_ingredients_scope.order(:recipe_id, :id)
 
       render_success({ recipe_ingredients: recipe_ingredients.map { |recipe_ingredient| RecipeIngredientSerializer.render(recipe_ingredient) } })
     end
@@ -13,6 +15,8 @@ module Api
     end
 
     def create
+      return unless ensure_editable_recipe_param!("Recipe ingredient creation failed")
+
       recipe_ingredient = RecipeIngredient.new(recipe_ingredient_params)
 
       if recipe_ingredient.save
@@ -23,6 +27,8 @@ module Api
     end
 
     def update
+      return unless ensure_editable_recipe_param!("Recipe ingredient update failed")
+
       if @recipe_ingredient.update(recipe_ingredient_params)
         render_success({ recipe_ingredient: RecipeIngredientSerializer.render(@recipe_ingredient) })
       else
@@ -37,8 +43,26 @@ module Api
 
     private
 
+    def visible_recipe_ingredients_scope
+      RecipeIngredient.includes(:recipe, :ingredient).joins(:recipe).merge(visible_recipes_relation)
+    end
+
+    def authorize_recipe_ingredient_modification!
+      return if current_user&.admin? || @recipe_ingredient.recipe.user_id == current_user.id
+
+      render_forbidden
+    end
+
+    def ensure_editable_recipe_param!(message)
+      recipe_id = params.dig(:recipe_ingredient, :recipe_id)
+      return true if recipe_id.blank? || editable_recipes_relation.where(id: recipe_id).exists?
+
+      render_error(message, details: { recipe_id: [ "contains an invalid value" ] })
+      false
+    end
+
     def set_recipe_ingredient
-      @recipe_ingredient = RecipeIngredient.includes(:recipe, :ingredient).find_by(id: params[:id])
+      @recipe_ingredient = visible_recipe_ingredients_scope.find_by(id: params[:id])
       return if @recipe_ingredient
 
       render_error("Recipe ingredient not found", status: :not_found)

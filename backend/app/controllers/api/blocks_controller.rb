@@ -1,9 +1,10 @@
 module Api
   class BlocksController < BaseController
+    before_action :authenticate_user!
     before_action :set_block, only: [ :show, :update, :destroy ]
 
     def index
-      blocks = Block.includes(:blocker, :blocked).order(blocked_at: :desc)
+      blocks = blocks_scope.order(blocked_at: :desc)
 
       render_success({ blocks: blocks.map { |block| BlockSerializer.render(block) } })
     end
@@ -13,7 +14,7 @@ module Api
     end
 
     def create
-      block = Block.new(block_params)
+      block = current_user.blocks_as_blocker.new(block_params)
 
       if block.save
         render_success({ block: BlockSerializer.render(block) }, status: :created)
@@ -37,20 +38,26 @@ module Api
 
     private
 
+    def blocks_scope
+      scope = Block.includes(:blocker, :blocked)
+      return scope if current_user.admin?
+
+      scope.where(blocker_id: current_user.id)
+    end
+
     def set_block
-      @block = Block.includes(:blocker, :blocked).find_by(id: params[:id])
+      @block = blocks_scope.find_by(id: params[:id])
       return if @block
 
       render_error("Block not found", status: :not_found)
     end
 
     def block_params
-      params.require(:block).permit(:blocker_id, :blocked_id, :blocked_at)
+      params.require(:block).permit(:blocked_id)
     end
 
     def normalized_errors(record)
       details = record.errors.to_hash
-      details[:blocker_id] = [ "contains an invalid value" ] if details.delete(:blocker) == [ "must exist" ]
       details[:blocked_id] = [ "contains an invalid value" ] if details.delete(:blocked) == [ "must exist" ]
       details
     end

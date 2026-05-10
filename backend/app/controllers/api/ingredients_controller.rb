@@ -1,5 +1,7 @@
 module Api
   class IngredientsController < BaseController
+    before_action :authenticate_user!, only: [ :create, :update, :destroy ]
+    before_action :require_staff!, only: [ :create, :update, :destroy ]
     before_action :set_ingredient, only: [ :show, :update, :destroy ]
 
     def index

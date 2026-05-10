@@ -1,10 +1,12 @@
 class UtensilSerializer
-  def self.render(utensil)
+  def self.render(utensil, recipes: nil)
+    visible_recipes = recipes || utensil.recipes.order(:title)
+
     {
       id: utensil.id,
       name: utensil.name,
-      recipe_ids: utensil.recipe_ids,
-      recipes: utensil.recipes.order(:title).map do |recipe|
+      recipe_ids: visible_recipes.map(&:id),
+      recipes: visible_recipes.map do |recipe|
         {
           id: recipe.id,
           title: recipe.title

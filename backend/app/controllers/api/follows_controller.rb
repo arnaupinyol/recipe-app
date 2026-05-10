@@ -1,9 +1,10 @@
 module Api
   class FollowsController < BaseController
+    before_action :authenticate_user!
     before_action :set_follow, only: [ :show, :update, :destroy ]
 
     def index
-      follows = Follow.includes(:follower, :followed).order(followed_at: :desc)
+      follows = follows_scope.order(followed_at: :desc)
 
       render_success({ follows: follows.map { |follow| FollowSerializer.render(follow) } })
     end
@@ -13,7 +14,7 @@ module Api
     end
 
     def create
-      follow = Follow.new(follow_params)
+      follow = current_user.follows_as_follower.new(follow_params)
 
       if follow.save
         render_success({ follow: FollowSerializer.render(follow) }, status: :created)
@@ -37,20 +38,26 @@ module Api
 
     private
 
+    def follows_scope
+      scope = Follow.includes(:follower, :followed)
+      return scope if current_user.admin?
+
+      scope.where(follower_id: current_user.id)
+    end
+
     def set_follow
-      @follow = Follow.includes(:follower, :followed).find_by(id: params[:id])
+      @follow = follows_scope.find_by(id: params[:id])
       return if @follow
 
       render_error("Follow not found", status: :not_found)
     end
 
     def follow_params
-      params.require(:follow).permit(:follower_id, :followed_id, :followed_at)
+      params.require(:follow).permit(:followed_id)
     end
 
     def normalized_errors(record)
       details = record.errors.to_hash
-      details[:follower_id] = [ "contains an invalid value" ] if details.delete(:follower) == [ "must exist" ]
       details[:followed_id] = [ "contains an invalid value" ] if details.delete(:followed) == [ "must exist" ]
       details
     end
