@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
+import '../../features/auth/presentation/screens/start_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/recipes/presentation/screens/recipe_detail_screen.dart';
 import '../../features/recipes/presentation/screens/recipes_screen.dart';
@@ -10,8 +11,13 @@ import 'route_names.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
-    initialLocation: RoutePaths.login,
+    initialLocation: RoutePaths.start,
     routes: [
+      GoRoute(
+        path: RoutePaths.start,
+        name: RouteNames.start,
+        builder: (context, state) => const StartScreen(),
+      ),
       GoRoute(
         path: RoutePaths.login,
         name: RouteNames.login,

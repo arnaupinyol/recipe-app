@@ -1,4 +1,5 @@
 abstract final class RoutePaths {
+  static const start = '/';
   static const login = '/login';
   static const register = '/register';
   static const recipes = '/recipes';
@@ -7,6 +8,7 @@ abstract final class RoutePaths {
 }
 
 abstract final class RouteNames {
+  static const start = 'start';
   static const login = 'login';
   static const register = 'register';
   static const recipes = 'recipes';

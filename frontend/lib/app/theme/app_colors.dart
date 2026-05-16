@@ -1,13 +1,23 @@
 import 'package:flutter/material.dart';
 
 abstract final class AppColors {
-  static const background = Color(0xFFF7F1E8);
-  static const surface = Color(0xFFFFFBF5);
-  static const surfaceMuted = Color(0xFFF0E6D8);
-  static const primary = Color(0xFF9E3D22);
-  static const secondary = Color(0xFF2E6F57);
-  static const accent = Color(0xFFE3A93C);
-  static const textPrimary = Color(0xFF241A16);
-  static const textSecondary = Color(0xFF6A564D);
-  static const border = Color(0xFFD8C7B5);
+  // Figma: Global Colors
+  static const brandPrimary = Color(0xFF8C5A3C);
+  static const brandSecondary = Color(0xFFC08552);
+  static const textPrimary = Color(0xFF4B2E2B);
+  static const baseWhite = Color(0xFFFFFFFF);
+  static const backgroundDefault = Color(0xFFFFF8F0);
+  static const neutral300 = Color(0xFFD9D9D9);
+  static const overlayScrim = Color(0x26000000);
+  static const iconDefault = Color(0xFF1D1B20);
+
+  // Semantic aliases used by the Flutter theme.
+  static const background = backgroundDefault;
+  static const surface = baseWhite;
+  static const surfaceMuted = backgroundDefault;
+  static const primary = brandPrimary;
+  static const secondary = brandSecondary;
+  static const accent = brandSecondary;
+  static const textSecondary = brandPrimary;
+  static const border = neutral300;
 }
