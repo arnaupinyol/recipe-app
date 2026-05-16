@@ -12,15 +12,19 @@ class BottomNavigation extends StatelessWidget {
     this.destinations = const [
       BottomNavigationItem(
         assetIcon: AppAssets.bottomNavigationHomeIcon,
-        label: 'Inici',
+        label: 'Home',
       ),
       BottomNavigationItem(
         assetIcon: AppAssets.bottomNavigationSearchIcon,
-        label: 'Cerca',
+        label: 'Buscar',
+      ),
+      BottomNavigationItem(
+        assetIcon: AppAssets.bottomNavigationAddCircleIcon,
+        label: 'Crear recepta',
       ),
       BottomNavigationItem(
         assetIcon: AppAssets.bottomNavigationBookmarkIcon,
-        label: 'Guardades',
+        label: 'Guardats',
       ),
       BottomNavigationItem(
         assetIcon: AppAssets.bottomNavigationProfileIcon,
@@ -35,25 +39,24 @@ class BottomNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return NavigationBar(
-      selectedIndex: selectedIndex,
-      onDestinationSelected: onDestinationSelected,
-      backgroundColor: AppColors.surface,
-      indicatorColor: AppColors.background,
-      destinations: [
-        for (final destination in destinations)
-          NavigationDestination(
-            icon: _NavigationIcon(
-              icon: destination.icon,
-              assetIcon: destination.assetIcon,
-            ),
-            selectedIcon: _NavigationIcon(
-              icon: destination.selectedIcon ?? destination.icon,
-              assetIcon: destination.selectedAssetIcon ?? destination.assetIcon,
-            ),
-            label: destination.label,
-          ),
-      ],
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: AppColors.brandSecondary)),
+      ),
+      child: SizedBox(
+        height: 77,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            for (final indexed in destinations.indexed)
+              _NavigationButton(
+                item: indexed.$2,
+                isSelected: selectedIndex == indexed.$1,
+                onTap: () => onDestinationSelected(indexed.$1),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -74,6 +77,58 @@ class BottomNavigationItem {
   final String label;
 }
 
+class _NavigationButton extends StatelessWidget {
+  const _NavigationButton({
+    required this.item,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final BottomNavigationItem item;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      label: item.label,
+      child: InkResponse(
+        onTap: onTap,
+        radius: 32,
+        child: SizedBox(
+          width: 48,
+          height: 63,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              _NavigationIcon(
+                icon: isSelected ? item.selectedIcon ?? item.icon : item.icon,
+                assetIcon: isSelected
+                    ? item.selectedAssetIcon ?? item.assetIcon
+                    : item.assetIcon,
+              ),
+              const SizedBox(height: 4),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 160),
+                width: 5,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.brandSecondary
+                      : Colors.transparent,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _NavigationIcon extends StatelessWidget {
   const _NavigationIcon({this.icon, this.assetIcon});
 
@@ -83,9 +138,13 @@ class _NavigationIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (assetIcon != null) {
-      return AppAssetIcon(assetIcon!, size: 24);
+      return AppAssetIcon(
+        assetIcon!,
+        size: 35,
+        color: AppColors.brandSecondary,
+      );
     }
 
-    return Icon(icon);
+    return Icon(icon, size: 35, color: AppColors.brandSecondary);
   }
 }

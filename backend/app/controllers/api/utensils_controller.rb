@@ -5,7 +5,7 @@ module Api
     before_action :set_utensil, only: [ :show, :update, :destroy ]
 
     def index
-      utensils = Utensil.includes(:recipes).order(:name)
+      utensils = Utensil.includes(:recipes, image_attachment: :blob).order(:name)
 
       render_success({ utensils: utensils.map { |utensil| serialize_utensil(utensil) } })
     end
@@ -49,14 +49,14 @@ module Api
     end
 
     def set_utensil
-      @utensil = Utensil.includes(:recipes).find_by(id: params[:id])
+      @utensil = Utensil.includes(:recipes, image_attachment: :blob).find_by(id: params[:id])
       return if @utensil
 
       render_error("Utensil not found", status: :not_found)
     end
 
     def utensil_params
-      params.require(:utensil).permit(:name)
+      params.require(:utensil).permit(:name, :image)
     end
   end
 end

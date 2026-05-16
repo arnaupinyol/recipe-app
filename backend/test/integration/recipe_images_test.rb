@@ -7,8 +7,8 @@ class RecipeImagesTest < ActionDispatch::IntegrationTest
     recipe_1 = create_recipe_for(user: owner, title: "Soup")
     recipe_2 = create_recipe_for(user: other_owner, title: "Cake", visibility: :private_recipe)
 
-    RecipeImage.create!(recipe: recipe_1, url: "https://example.com/soup.jpg")
-    RecipeImage.create!(recipe: recipe_2, url: "https://example.com/cake.jpg")
+    attach_test_image(RecipeImage.new(recipe: recipe_1))
+    attach_test_image(RecipeImage.new(recipe: recipe_2))
 
     get "/api/recipe_images"
 
@@ -19,7 +19,7 @@ class RecipeImagesTest < ActionDispatch::IntegrationTest
   test "shows a recipe image" do
     user = create_user(username: "recipe_image_show_owner", email: "recipe.image.show.owner@example.com")
     recipe = create_recipe_for(user: user, title: "Bread")
-    recipe_image = RecipeImage.create!(recipe: recipe, url: "https://example.com/bread.jpg")
+    recipe_image = attach_test_image(RecipeImage.new(recipe: recipe))
 
     get "/api/recipe_images/#{recipe_image.id}"
 
@@ -34,33 +34,34 @@ class RecipeImagesTest < ActionDispatch::IntegrationTest
     post "/api/recipe_images", params: {
       recipe_image: {
         recipe_id: recipe.id,
-        url: "https://example.com/pizza.jpg"
+        image: uploaded_image
       }
-    }, headers: auth_headers_for(user), as: :json
+    }, headers: auth_headers_for(user)
 
     assert_response :created
     assert_equal recipe.id, response_json.dig("recipe_image", "recipe_id")
+    assert_match %r{\A/rails/active_storage/}, response_json.dig("recipe_image", "url")
   end
 
   test "updates a recipe image only for its owner" do
     user = create_user(username: "recipe_image_update_owner", email: "recipe.image.update.owner@example.com")
     recipe = create_recipe_for(user: user, title: "Rice")
-    recipe_image = RecipeImage.create!(recipe: recipe, url: "https://example.com/rice-old.jpg")
+    recipe_image = attach_test_image(RecipeImage.new(recipe: recipe), filename: "old-test-image.png")
 
     patch "/api/recipe_images/#{recipe_image.id}", params: {
       recipe_image: {
-        url: "https://example.com/rice-new.jpg"
+        image: uploaded_image
       }
-    }, headers: auth_headers_for(user), as: :json
+    }, headers: auth_headers_for(user)
 
     assert_response :success
-    assert_equal "https://example.com/rice-new.jpg", response_json.dig("recipe_image", "url")
+    assert_match %r{\A/rails/active_storage/}, response_json.dig("recipe_image", "url")
   end
 
   test "deletes a recipe image" do
     user = create_user(username: "recipe_image_delete_owner", email: "recipe.image.delete.owner@example.com")
     recipe = create_recipe_for(user: user, title: "Tea")
-    recipe_image = RecipeImage.create!(recipe: recipe, url: "https://example.com/tea.jpg")
+    recipe_image = attach_test_image(RecipeImage.new(recipe: recipe))
 
     delete "/api/recipe_images/#{recipe_image.id}", headers: auth_headers_for(user)
 
@@ -77,9 +78,9 @@ class RecipeImagesTest < ActionDispatch::IntegrationTest
     post "/api/recipe_images", params: {
       recipe_image: {
         recipe_id: recipe.id,
-        url: "https://example.com/missing-recipe.jpg"
+        image: uploaded_image
       }
-    }, headers: auth_headers_for(user), as: :json
+    }, headers: auth_headers_for(user)
 
     assert_response :unprocessable_entity
     assert_equal [ "contains an invalid value" ], response_json.dig("error", "details", "recipe_id")

@@ -5,7 +5,7 @@ module Api
     before_action :set_ingredient, only: [ :show, :update, :destroy ]
 
     def index
-      ingredients = Ingredient.includes(:allergies).order(:name)
+      ingredients = Ingredient.includes(:allergies, image_attachment: :blob).order(:name)
 
       render_success({ ingredients: ingredients.map { |ingredient| IngredientSerializer.render(ingredient) } })
     end
@@ -42,14 +42,14 @@ module Api
     private
 
     def set_ingredient
-      @ingredient = Ingredient.includes(:allergies).find_by(id: params[:id])
+      @ingredient = Ingredient.includes(:allergies, image_attachment: :blob).find_by(id: params[:id])
       return if @ingredient
 
       render_error("Ingredient not found", status: :not_found)
     end
 
     def ingredient_params
-      params.require(:ingredient).permit(:name, :image_url, :optional_description, allergy_ids: [])
+      params.require(:ingredient).permit(:name, :image, :optional_description, allergy_ids: [])
     end
   end
 end

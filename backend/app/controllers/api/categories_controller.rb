@@ -5,7 +5,7 @@ module Api
     before_action :set_category, only: [ :show, :update, :destroy ]
 
     def index
-      categories = Category.order(:name)
+      categories = Category.includes(image_attachment: :blob).order(:name)
 
       render_success({ categories: categories.map { |category| CategorySerializer.render(category) } })
     end
@@ -44,14 +44,14 @@ module Api
     private
 
     def set_category
-      @category = Category.find_by(id: params[:id])
+      @category = Category.includes(image_attachment: :blob).find_by(id: params[:id])
       return if @category
 
       render_error("Category not found", status: :not_found)
     end
 
     def category_params
-      params.require(:category).permit(:name, :description)
+      params.require(:category).permit(:name, :description, :image)
     end
   end
 end

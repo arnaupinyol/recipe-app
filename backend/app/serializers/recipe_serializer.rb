@@ -1,5 +1,7 @@
 class RecipeSerializer
   def self.render(recipe)
+    recipe_images = recipe.recipe_images.sort_by(&:id)
+
     {
       id: recipe.id,
       user_id: recipe.user_id,
@@ -13,6 +15,8 @@ class RecipeSerializer
       can_be_ingredient: recipe.can_be_ingredient,
       likes_count: recipe.likes_count,
       saves_count: recipe.saves_count,
+      recipe_image_ids: recipe_images.map(&:id),
+      image_urls: recipe_images.map { |recipe_image| AttachmentUrlHelper.url_for(recipe_image.image) }.compact,
       category_ids: recipe.categories.order(:name).pluck(:id),
       categories: recipe.categories.order(:name).map do |category|
         {

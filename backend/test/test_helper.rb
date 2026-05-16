@@ -1,6 +1,8 @@
 ENV["RAILS_ENV"] ||= "test"
 require_relative "../config/environment"
 require "rails/test_help"
+require "rack/test"
+require "stringio"
 
 module ApiTestHelpers
   def create_user(username:, email:, role: :user, account_status: :active, **attributes)
@@ -38,6 +40,20 @@ module ApiTestHelpers
 
   def response_json
     JSON.parse(response.body)
+  end
+
+  def uploaded_image(filename: "test-image.png", content_type: "image/png")
+    Rack::Test::UploadedFile.new(Rails.root.join("test/fixtures/files/#{filename}"), content_type)
+  end
+
+  def attach_test_image(record, attachment_name: :image, filename: "test-image.png", content_type: "image/png")
+    record.public_send(attachment_name).attach(
+      io: StringIO.new("test image"),
+      filename: filename,
+      content_type: content_type
+    )
+    record.save!
+    record
   end
 end
 

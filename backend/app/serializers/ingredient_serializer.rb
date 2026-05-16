@@ -3,7 +3,7 @@ class IngredientSerializer
     {
       id: ingredient.id,
       name: ingredient.name,
-      image_url: ingredient.image_url,
+      image_url: AttachmentUrlHelper.url_for(ingredient.image),
       optional_description: ingredient.optional_description,
       allergy_ids: ingredient.allergy_ids,
       allergies: ingredient.allergies.order(:name).map do |allergy|

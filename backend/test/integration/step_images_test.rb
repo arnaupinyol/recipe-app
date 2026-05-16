@@ -12,8 +12,8 @@ class StepImagesTest < ActionDispatch::IntegrationTest
     step_1 = build_step(user: owner, title: "Soup")
     step_2 = build_step(user: other_owner, title: "Cake", visibility: :private_recipe)
 
-    StepImage.create!(step: step_1, url: "https://example.com/soup-step.jpg")
-    StepImage.create!(step: step_2, url: "https://example.com/cake-step.jpg")
+    attach_test_image(StepImage.new(step: step_1))
+    attach_test_image(StepImage.new(step: step_2))
 
     get "/api/step_images"
 
@@ -24,7 +24,7 @@ class StepImagesTest < ActionDispatch::IntegrationTest
   test "shows a step image for a visible recipe" do
     user = create_user(username: "step_image_show_owner", email: "step.image.show.owner@example.com")
     step = build_step(user: user, title: "Bread")
-    step_image = StepImage.create!(step: step, url: "https://example.com/bread-step.jpg")
+    step_image = attach_test_image(StepImage.new(step: step))
 
     get "/api/step_images/#{step_image.id}"
 
@@ -39,33 +39,34 @@ class StepImagesTest < ActionDispatch::IntegrationTest
     post "/api/step_images", params: {
       step_image: {
         step_id: step.id,
-        url: "https://example.com/pizza-step.jpg"
+        image: uploaded_image
       }
-    }, headers: auth_headers_for(user), as: :json
+    }, headers: auth_headers_for(user)
 
     assert_response :created
     assert_equal step.id, response_json.dig("step_image", "step_id")
+    assert_match %r{\A/rails/active_storage/}, response_json.dig("step_image", "url")
   end
 
   test "updates a step image only for its owner" do
     user = create_user(username: "step_image_update_owner", email: "step.image.update.owner@example.com")
     step = build_step(user: user, title: "Rice")
-    step_image = StepImage.create!(step: step, url: "https://example.com/rice-old.jpg")
+    step_image = attach_test_image(StepImage.new(step: step), filename: "old-test-image.png")
 
     patch "/api/step_images/#{step_image.id}", params: {
       step_image: {
-        url: "https://example.com/rice-new.jpg"
+        image: uploaded_image
       }
-    }, headers: auth_headers_for(user), as: :json
+    }, headers: auth_headers_for(user)
 
     assert_response :success
-    assert_equal "https://example.com/rice-new.jpg", response_json.dig("step_image", "url")
+    assert_match %r{\A/rails/active_storage/}, response_json.dig("step_image", "url")
   end
 
   test "deletes a step image" do
     user = create_user(username: "step_image_delete_owner", email: "step.image.delete.owner@example.com")
     step = build_step(user: user, title: "Tea")
-    step_image = StepImage.create!(step: step, url: "https://example.com/tea-step.jpg")
+    step_image = attach_test_image(StepImage.new(step: step))
 
     delete "/api/step_images/#{step_image.id}", headers: auth_headers_for(user)
 
@@ -82,9 +83,9 @@ class StepImagesTest < ActionDispatch::IntegrationTest
     post "/api/step_images", params: {
       step_image: {
         step_id: step.id,
-        url: "https://example.com/missing-step.jpg"
+        image: uploaded_image
       }
-    }, headers: auth_headers_for(user), as: :json
+    }, headers: auth_headers_for(user)
 
     assert_response :unprocessable_entity
     assert_equal [ "contains an invalid value" ], response_json.dig("error", "details", "step_id")

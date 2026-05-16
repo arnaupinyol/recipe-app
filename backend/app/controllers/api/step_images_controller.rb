@@ -44,7 +44,7 @@ module Api
     private
 
     def visible_step_images_scope
-      StepImage.includes(step: :recipe).joins(step: :recipe).merge(visible_recipes_relation)
+      StepImage.includes({ image_attachment: :blob }, step: :recipe).joins(step: :recipe).merge(visible_recipes_relation)
     end
 
     def editable_steps_scope
@@ -73,7 +73,7 @@ module Api
     end
 
     def step_image_params
-      params.require(:step_image).permit(:step_id, :url)
+      params.require(:step_image).permit(:step_id, :image)
     end
 
     def normalized_step_image_errors(step_image)

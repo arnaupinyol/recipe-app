@@ -30,13 +30,14 @@ class IngredientsTest < ActionDispatch::IntegrationTest
     post "/api/ingredients", params: {
       ingredient: {
         name: "Iogurt",
-        image_url: "https://example.com/iogurt.png",
+        image: uploaded_image,
         optional_description: "Natural",
         allergy_ids: [ allergy_1.id, allergy_2.id ]
       }
-    }, headers: auth_headers_for(admin), as: :json
+    }, headers: auth_headers_for(admin)
 
     assert_response :created
+    assert_match %r{\A/rails/active_storage/}, response_json.dig("ingredient", "image_url")
     assert_equal [ "Lactosa", "Soja" ], response_json.dig("ingredient", "allergies").map { |item| item["name"] }
   end
 

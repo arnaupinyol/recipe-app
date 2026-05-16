@@ -6,7 +6,7 @@ class StepImageSerializer
       step_order_number: step_image.step.order_number,
       recipe_id: step_image.step.recipe_id,
       recipe_title: step_image.step.recipe.title,
-      url: step_image.url,
+      url: AttachmentUrlHelper.url_for(step_image.image),
       created_at: step_image.created_at,
       updated_at: step_image.updated_at
     }

@@ -44,7 +44,7 @@ module Api
     private
 
     def visible_recipe_images_scope
-      RecipeImage.includes(:recipe).joins(:recipe).merge(visible_recipes_relation)
+      RecipeImage.includes(:recipe, image_attachment: :blob).joins(:recipe).merge(visible_recipes_relation)
     end
 
     def authorize_recipe_image_modification!
@@ -69,7 +69,7 @@ module Api
     end
 
     def recipe_image_params
-      params.require(:recipe_image).permit(:recipe_id, :url)
+      params.require(:recipe_image).permit(:recipe_id, :image)
     end
 
     def normalized_recipe_image_errors(recipe_image)

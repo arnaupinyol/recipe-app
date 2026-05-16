@@ -1,6 +1,7 @@
 Rails.application.routes.draw do
   namespace :api do
     get "status", to: "status#show"
+    get "home", to: "home#index"
     resources :users, only: [ :index, :show, :create, :update, :destroy ]
     resources :recipes, only: [ :index, :show, :create, :update, :destroy ]
     resources :categories, only: [ :index, :show, :create, :update, :destroy ]

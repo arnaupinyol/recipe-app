@@ -5,7 +5,9 @@ module Api
     before_action :authorize_recipe_modification!, only: [ :update, :destroy ]
 
     def index
-      recipes = visible_recipes_relation.includes(:user, :categories, :utensils).order(created_at: :desc)
+      recipes = visible_recipes_relation
+                .includes(:user, :categories, :utensils, recipe_images: { image_attachment: :blob })
+                .order(created_at: :desc)
 
       render_success({ recipes: recipes.map { |recipe| RecipeSerializer.render(recipe) } })
     end
@@ -54,7 +56,9 @@ module Api
     end
 
     def set_recipe
-      @recipe = visible_recipes_relation.includes(:user, :categories, :utensils).find_by(id: params[:id])
+      @recipe = visible_recipes_relation
+                .includes(:user, :categories, :utensils, recipe_images: { image_attachment: :blob })
+                .find_by(id: params[:id])
       return if @recipe
 
       render_error("Recipe not found", status: :not_found)

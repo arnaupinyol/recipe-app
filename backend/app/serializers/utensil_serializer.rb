@@ -5,6 +5,7 @@ class UtensilSerializer
     {
       id: utensil.id,
       name: utensil.name,
+      image_url: AttachmentUrlHelper.url_for(utensil.image),
       recipe_ids: visible_recipes.map(&:id),
       recipes: visible_recipes.map do |recipe|
         {

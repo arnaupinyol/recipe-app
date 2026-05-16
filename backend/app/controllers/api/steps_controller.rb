@@ -44,7 +44,7 @@ module Api
     private
 
     def visible_steps_scope
-      Step.includes(:recipe, :step_images).joins(:recipe).merge(visible_recipes_relation)
+      Step.includes(:recipe, step_images: { image_attachment: :blob }).joins(:recipe).merge(visible_recipes_relation)
     end
 
     def authorize_step_modification!
