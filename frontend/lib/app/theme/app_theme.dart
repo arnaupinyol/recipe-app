@@ -20,15 +20,18 @@ abstract final class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
+      fontFamily: AppTypography.fontFamily,
       scaffoldBackgroundColor: AppColors.background,
       textTheme: AppTypography.textTheme,
+      primaryTextTheme: AppTypography.textTheme,
       dividerColor: AppColors.border,
       iconTheme: const IconThemeData(color: AppColors.iconDefault),
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         elevation: 0,
         centerTitle: false,
         backgroundColor: Colors.transparent,
         foregroundColor: AppColors.textPrimary,
+        titleTextStyle: AppTypography.textTheme.titleLarge,
       ),
       cardTheme: CardThemeData(
         color: AppColors.surface,

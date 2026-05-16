@@ -5,52 +5,16 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../shared/widgets/design_system/app_asset_icon.dart';
 
 class HomeFilterBar extends StatelessWidget {
-  const HomeFilterBar({required this.filters, super.key});
-
-  final List<String> filters;
+  const HomeFilterBar({super.key});
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: 32,
-      child: ListView.separated(
+      child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 27),
-        itemBuilder: (context, index) {
-          if (index == filters.length) {
-            return const _AddFilterButton();
-          }
-
-          return _FilterChip(label: filters[index]);
-        },
-        separatorBuilder: (context, index) => const SizedBox(width: 8),
-        itemCount: filters.length + 1,
-      ),
-    );
-  }
-}
-
-class _FilterChip extends StatelessWidget {
-  const _FilterChip({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 30,
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        border: Border.all(color: AppColors.brandPrimary),
-        borderRadius: BorderRadius.circular(30),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-          color: AppColors.brandPrimary,
-          fontWeight: FontWeight.w700,
-        ),
+        children: const [_AddFilterButton()],
       ),
     );
   }

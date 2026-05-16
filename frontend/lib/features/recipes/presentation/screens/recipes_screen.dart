@@ -9,7 +9,6 @@ import '../../../../shared/widgets/design_system/primary_button.dart';
 import '../../application/home_recipes_provider.dart';
 import '../widgets/home_filter_bar.dart';
 import '../widgets/home_header.dart';
-import '../widgets/home_recipe_models.dart';
 import '../widgets/home_recipe_pager.dart';
 
 class RecipesScreen extends ConsumerStatefulWidget {
@@ -26,11 +25,6 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
   Widget build(BuildContext context) {
     final feed = _selectedTab == 0 ? HomeFeed.forYou : HomeFeed.following;
     final recipesState = ref.watch(homeRecipesProvider(feed));
-    final loadedRecipes = recipesState.maybeWhen(
-      data: (recipes) => recipes,
-      orElse: () => const <HomeRecipe>[],
-    );
-    final filters = _filtersFor(loadedRecipes);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundDefault,
@@ -56,7 +50,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
                   left: 0,
                   right: 0,
                   top: 118,
-                  child: HomeFilterBar(filters: filters),
+                  child: const HomeFilterBar(),
                 ),
                 Positioned(
                   left: 0,
@@ -107,14 +101,6 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
         ),
       ),
     );
-  }
-
-  List<String> _filtersFor(List<HomeRecipe> recipes) {
-    if (recipes.isEmpty || recipes.first.filters.isEmpty) {
-      return patatesOlotRecipe.filters;
-    }
-
-    return recipes.first.filters;
   }
 }
 

@@ -68,6 +68,13 @@ flutter:
     - assets/icons/recipe/empty/
     - assets/icons/recipe/full/
 
+  fonts:
+    - family: Roboto Serif
+      fonts:
+        - asset: assets/fonts/RobotoSerif-VariableFont.ttf
+        - asset: assets/fonts/RobotoSerif-Italic-VariableFont.ttf
+          style: italic
+
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 

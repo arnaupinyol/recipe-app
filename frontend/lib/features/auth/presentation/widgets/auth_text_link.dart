@@ -21,7 +21,6 @@ class AuthTextLink extends StatelessWidget {
         label,
         textAlign: TextAlign.center,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          fontFamily: 'Inter',
           fontSize: 10,
           height: 1.2,
           fontWeight: FontWeight.w400,

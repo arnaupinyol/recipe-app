@@ -1,6 +1,9 @@
 import '../../../../app/assets/app_assets.dart';
 import '../../../../core/config/env.dart';
 
+const _fallbackRecipeImageAsset = AppAssets.appIconLarge;
+const _fallbackRowImageAsset = AppAssets.appIconSmall;
+
 class HomeRecipe {
   const HomeRecipe({
     required this.id,
@@ -8,11 +11,12 @@ class HomeRecipe {
     required this.authorAvatarAsset,
     required this.imageAsset,
     this.imageUrl,
-    required this.rating,
+    required this.difficulty,
     required this.duration,
     required this.servings,
     required this.filters,
     required this.ingredients,
+    required this.utensils,
     required this.steps,
     this.isLiked = true,
     this.isBookmarked = false,
@@ -23,11 +27,12 @@ class HomeRecipe {
   final String authorAvatarAsset;
   final String imageAsset;
   final String? imageUrl;
-  final double rating;
+  final int difficulty;
   final String duration;
   final String servings;
   final List<String> filters;
   final List<HomeRecipeIngredient> ingredients;
+  final List<HomeRecipeUtensil> utensils;
   final List<HomeRecipeStep> steps;
   final bool isLiked;
   final bool isBookmarked;
@@ -48,15 +53,18 @@ class HomeRecipe {
       id: _readString(json['id']) ?? '',
       title: _readString(json['title']) ?? 'Recepta',
       authorAvatarAsset: AppAssets.userIcon,
-      imageAsset: AppAssets.recipePatatesOlot,
+      imageAsset: _fallbackRecipeImageAsset,
       imageUrl: primaryImageUrl,
-      rating: _readDouble(json['rating']) ?? 0,
+      difficulty: _readInt(json['difficulty'])?.clamp(0, 5) ?? 0,
       duration: _formatDuration(_readInt(json['preparation_time_minutes'])),
       servings: _formatServings(_readInt(json['servings'])),
       filters: categories,
       ingredients: _readList(
         json['ingredients'],
       ).map(HomeRecipeIngredient.fromJson).toList(),
+      utensils: _readList(
+        json['utensils'],
+      ).map(HomeRecipeUtensil.fromJson).toList(),
       steps: _readList(json['steps']).map(HomeRecipeStep.fromJson).toList(),
       isLiked: json['liked_by_current_user'] == true,
       isBookmarked: json['saved_by_current_user'] == true,
@@ -87,7 +95,27 @@ class HomeRecipeIngredient {
         unitType: _readString(json['unit_type']),
       ),
       note: _readString(json['notes']) ?? '',
-      imageAsset: AppAssets.ingredientPatata,
+      imageAsset: _fallbackRowImageAsset,
+      imageUrl: _absoluteBackendUrl(_readString(json['image_url'])),
+    );
+  }
+}
+
+class HomeRecipeUtensil {
+  const HomeRecipeUtensil({
+    required this.name,
+    required this.imageAsset,
+    this.imageUrl,
+  });
+
+  final String name;
+  final String imageAsset;
+  final String? imageUrl;
+
+  factory HomeRecipeUtensil.fromJson(Map<String, dynamic> json) {
+    return HomeRecipeUtensil(
+      name: _readString(json['name']) ?? 'Estri',
+      imageAsset: _fallbackRowImageAsset,
       imageUrl: _absoluteBackendUrl(_readString(json['image_url'])),
     );
   }
@@ -114,70 +142,6 @@ class HomeRecipeStep {
     );
   }
 }
-
-const patatesOlotRecipe = HomeRecipe(
-  id: 'patates-olot',
-  title: "Patates d'olot",
-  authorAvatarAsset: AppAssets.userIcon,
-  imageAsset: AppAssets.recipePatatesOlot,
-  rating: 3.5,
-  duration: '1h',
-  servings: '4p.',
-  filters: ['Catalana', 'Patates'],
-  ingredients: [
-    HomeRecipeIngredient(
-      name: 'Patata',
-      amount: '4 unitats',
-      note: 'Kennebec mitjanes',
-      imageAsset: AppAssets.ingredientPatata,
-    ),
-    HomeRecipeIngredient(
-      name: 'Carn picada mixta',
-      amount: '400 grams',
-      note: 'O botifarra de perol',
-      imageAsset: AppAssets.ingredientPatata,
-    ),
-    HomeRecipeIngredient(
-      name: 'Ceba',
-      amount: '1 unitat',
-      note: 'De Figueres mitjana',
-      imageAsset: AppAssets.ingredientPatata,
-    ),
-    HomeRecipeIngredient(
-      name: 'Tomàquet',
-      amount: '1 unitat',
-      note: 'Madur si pot ser',
-      imageAsset: AppAssets.ingredientPatata,
-    ),
-    HomeRecipeIngredient(
-      name: 'Ou',
-      amount: '2 unitats',
-      note: 'Clares i rovells separats',
-      imageAsset: AppAssets.ingredientPatata,
-    ),
-  ],
-  steps: [
-    HomeRecipeStep(
-      orderNumber: 1,
-      title: 'Preparació del farcit',
-      description:
-          'Daura la carn a foc mitjà en una cassola amb un rajolí d’oli. '
-          'Incorpora la ceba ben picada i deixa que es caramel·litzi '
-          'lleugerament.\nAfegeix un raig de conyac i un altre de vi ranci i '
-          'deixa que faci xup-xup.\nRalla el tomàquet i afegeix-lo amb una '
-          'mica de brou; cou-ho a foc lent durant aproximadament una hora fins '
-          'que el líquid es redueixi.\nTritura aquesta barreja fins a obtenir '
-          'un farcit fi i deixa’l reposar a la nevera perquè agafi '
-          'consistència.',
-    ),
-  ],
-);
-
-const mockHomeRecipes = [
-  patatesOlotRecipe,
-  patatesOlotRecipe,
-  patatesOlotRecipe,
-];
 
 List<Map<String, dynamic>> _readList(Object? value) {
   if (value is! List) {

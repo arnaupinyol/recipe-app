@@ -26,7 +26,6 @@ class StartScreen extends StatelessWidget {
             'Hola!',
             textAlign: TextAlign.center,
             style: textTheme.headlineMedium?.copyWith(
-              fontFamily: 'Inter',
               fontSize: 28,
               height: 1.2,
               fontWeight: FontWeight.w700,
@@ -44,7 +43,6 @@ class StartScreen extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: textTheme.bodySmall?.copyWith(
-              fontFamily: 'Inter',
               fontSize: 14,
               height: 1.2,
               fontWeight: FontWeight.w400,

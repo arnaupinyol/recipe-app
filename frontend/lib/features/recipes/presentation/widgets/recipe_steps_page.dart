@@ -66,7 +66,7 @@ class RecipeStepsPage extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 6),
                     child: Text(
                       step.description,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppColors.brandSecondary,
                         fontWeight: FontWeight.w800,
                       ),

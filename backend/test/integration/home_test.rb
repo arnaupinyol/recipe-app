@@ -6,11 +6,14 @@ class HomeTest < ActionDispatch::IntegrationTest
     viewer = create_user(username: "home_viewer", email: "home.viewer@example.com")
     category = Category.create!(name: "Catalana")
     ingredient = Ingredient.create!(name: "Patata")
+    utensil = Utensil.create!(name: "Cassola")
     recipe = create_recipe_for(user: user, title: "Patates d'Olot", preparation_time_minutes: 60, servings: 4)
     attach_test_image(ingredient)
+    attach_test_image(utensil)
     attach_test_image(RecipeImage.new(recipe: recipe))
 
     recipe.categories << category
+    recipe.utensils << utensil
     RecipeIngredient.create!(recipe: recipe, ingredient: ingredient, quantity: 4, unit_type: :units, notes: "Kennebec mitjanes")
     Step.create!(recipe: recipe, description: "Prepara el farcit", order_number: 1)
     UserRecipeLike.create!(user: viewer, recipe: recipe)
@@ -24,8 +27,10 @@ class HomeTest < ActionDispatch::IntegrationTest
     assert_equal "Patates d'Olot", home_recipe["title"]
     assert_equal [ "Catalana" ], home_recipe["categories"].map { |item| item["name"] }
     assert_equal [ "Patata" ], home_recipe["ingredients"].map { |item| item["name"] }
+    assert_equal [ "Cassola" ], home_recipe["utensils"].map { |item| item["name"] }
     assert home_recipe["image_urls"].first.start_with?("http://www.example.com/rails/active_storage/")
     assert home_recipe["ingredients"].first["image_url"].start_with?("http://www.example.com/rails/active_storage/")
+    assert home_recipe["utensils"].first["image_url"].start_with?("http://www.example.com/rails/active_storage/")
     assert_equal [ "Prepara el farcit" ], home_recipe["steps"].map { |item| item["description"] }
     assert_equal true, home_recipe["liked_by_current_user"]
     assert_equal true, home_recipe["saved_by_current_user"]

@@ -1,8 +1,6 @@
 abstract final class AppAssets {
   static const appIconLarge = 'assets/images/app_icon_large.png';
   static const appIconSmall = 'assets/images/app_icon_small.png';
-  static const recipePatatesOlot = 'assets/images/recipe_patates_olot.png';
-  static const ingredientPatata = 'assets/images/ingredient_patata.png';
   static const settingsIcon = 'assets/icons/settings_icon.png';
   static const userIcon = 'assets/icons/user.png';
   static const bottomNavigationAddCircleIcon =

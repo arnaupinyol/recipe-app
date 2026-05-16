@@ -3,6 +3,7 @@ class HomeRecipeSerializer
     recipe_images = recipe.recipe_images.sort_by(&:id)
     ingredients = recipe.recipe_ingredients.sort_by(&:id)
     steps = recipe.steps.sort_by(&:order_number)
+    utensils = recipe.utensils.sort_by(&:name)
 
     {
       id: recipe.id,
@@ -22,6 +23,13 @@ class HomeRecipeSerializer
         {
           id: category.id,
           name: category.name
+        }
+      end,
+      utensils: utensils.map do |utensil|
+        {
+          id: utensil.id,
+          name: utensil.name,
+          image_url: AttachmentUrlHelper.url_for(utensil.image, base_url: base_url)
         }
       end,
       ingredients: ingredients.map do |recipe_ingredient|

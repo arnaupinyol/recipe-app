@@ -44,7 +44,7 @@ class RecipeSummaryPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _RatingStars(rating: recipe.rating),
+                    _DifficultyStars(difficulty: recipe.difficulty),
                     const SizedBox(height: 12),
                     _InfoMetric(
                       icon: AppAssets.recipeClockIcon,
@@ -87,11 +87,11 @@ class _RecipeTitle extends StatelessWidget {
         Expanded(
           child: Text(
             recipe.title,
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.displayLarge?.copyWith(
-              fontSize: 36,
-              height: 1,
+              fontSize: 28,
+              height: 1.06,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -143,10 +143,10 @@ class _AssetRecipeImage extends StatelessWidget {
   }
 }
 
-class _RatingStars extends StatelessWidget {
-  const _RatingStars({required this.rating});
+class _DifficultyStars extends StatelessWidget {
+  const _DifficultyStars({required this.difficulty});
 
-  final double rating;
+  final int difficulty;
 
   @override
   Widget build(BuildContext context) {
@@ -156,24 +156,15 @@ class _RatingStars extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(right: 3),
             child: AppAssetIcon(
-              _assetFor(index),
+              index < difficulty
+                  ? AppAssets.recipeStarFullIcon
+                  : AppAssets.recipeStarEmptyIcon,
               size: 32,
               color: AppColors.brandPrimary,
             ),
           ),
       ],
     );
-  }
-
-  String _assetFor(int index) {
-    final value = index + 1;
-    if (rating >= value) {
-      return AppAssets.recipeStarFullIcon;
-    }
-    if (rating > index) {
-      return AppAssets.recipeHalfStarFullIcon;
-    }
-    return AppAssets.recipeStarEmptyIcon;
   }
 }
 

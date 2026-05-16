@@ -80,7 +80,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           child: Text(
             'Sign up',
             style: textTheme.headlineMedium?.copyWith(
-              fontFamily: 'Inter',
               fontSize: 28,
               height: 1.2,
               fontWeight: FontWeight.w700,

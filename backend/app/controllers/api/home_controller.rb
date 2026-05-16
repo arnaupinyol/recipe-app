@@ -8,6 +8,7 @@ module Api
                   :comments,
                   :user_recipe_likes,
                   :user_saved_recipes,
+                  utensils: { image_attachment: :blob },
                   recipe_images: { image_attachment: :blob },
                   recipe_ingredients: { ingredient: { image_attachment: :blob } },
                   steps: { step_images: { image_attachment: :blob } }

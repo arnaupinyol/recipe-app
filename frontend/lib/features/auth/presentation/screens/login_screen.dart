@@ -79,7 +79,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             'Login',
             textAlign: TextAlign.center,
             style: textTheme.headlineMedium?.copyWith(
-              fontFamily: 'Inter',
               fontSize: 28,
               height: 1.2,
               fontWeight: FontWeight.w700,
