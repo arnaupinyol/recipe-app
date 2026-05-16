@@ -18,6 +18,10 @@ class HomeRecipe {
     required this.ingredients,
     required this.utensils,
     required this.steps,
+    required this.likesCount,
+    required this.savesCount,
+    this.currentUserLikeId,
+    this.currentUserSavedRecipeId,
     this.isLiked = true,
     this.isBookmarked = false,
   });
@@ -34,6 +38,10 @@ class HomeRecipe {
   final List<HomeRecipeIngredient> ingredients;
   final List<HomeRecipeUtensil> utensils;
   final List<HomeRecipeStep> steps;
+  final int likesCount;
+  final int savesCount;
+  final int? currentUserLikeId;
+  final int? currentUserSavedRecipeId;
   final bool isLiked;
   final bool isBookmarked;
 
@@ -66,8 +74,42 @@ class HomeRecipe {
         json['utensils'],
       ).map(HomeRecipeUtensil.fromJson).toList(),
       steps: _readList(json['steps']).map(HomeRecipeStep.fromJson).toList(),
+      likesCount: _readInt(json['likes_count']) ?? 0,
+      savesCount: _readInt(json['saves_count']) ?? 0,
+      currentUserLikeId: _readInt(json['current_user_like_id']),
+      currentUserSavedRecipeId: _readInt(json['current_user_saved_recipe_id']),
       isLiked: json['liked_by_current_user'] == true,
       isBookmarked: json['saved_by_current_user'] == true,
+    );
+  }
+
+  factory HomeRecipe.fromSavedRecipeJson(Map<String, dynamic> json) {
+    final recipe = json['recipe'];
+    if (recipe is Map<String, dynamic>) {
+      return HomeRecipe.fromJson({
+        ...recipe,
+        'saved_by_current_user': true,
+        if (_readInt(recipe['current_user_saved_recipe_id']) == null)
+          'current_user_saved_recipe_id': _readInt(json['id']),
+      });
+    }
+
+    return HomeRecipe(
+      id: _readString(json['recipe_id']) ?? '',
+      title: _readString(json['recipe_title']) ?? 'Recepta',
+      authorAvatarAsset: AppAssets.userIcon,
+      imageAsset: _fallbackRecipeImageAsset,
+      difficulty: 0,
+      duration: '-',
+      servings: '-',
+      filters: const [],
+      ingredients: const [],
+      utensils: const [],
+      steps: const [],
+      likesCount: 0,
+      savesCount: 0,
+      currentUserSavedRecipeId: _readInt(json['id']),
+      isBookmarked: true,
     );
   }
 }

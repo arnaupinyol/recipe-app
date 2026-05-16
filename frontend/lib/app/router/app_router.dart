@@ -7,6 +7,7 @@ import '../../features/auth/presentation/screens/start_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/recipes/presentation/screens/recipe_detail_screen.dart';
 import '../../features/recipes/presentation/screens/recipes_screen.dart';
+import '../../features/recipes/presentation/screens/saved_recipes_screen.dart';
 import 'route_names.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -40,6 +41,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final recipeId = state.pathParameters['id'] ?? 'unknown';
           return RecipeDetailScreen(recipeId: recipeId);
         },
+      ),
+      GoRoute(
+        path: RoutePaths.savedRecipes,
+        name: RouteNames.savedRecipes,
+        builder: (context, state) => const SavedRecipesScreen(),
       ),
       GoRoute(
         path: RoutePaths.profile,

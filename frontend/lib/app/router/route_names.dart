@@ -4,6 +4,7 @@ abstract final class RoutePaths {
   static const register = '/register';
   static const recipes = '/recipes';
   static const recipeDetail = '/recipes/:id';
+  static const savedRecipes = '/saved';
   static const profile = '/profile';
 }
 
@@ -13,5 +14,6 @@ abstract final class RouteNames {
   static const register = 'register';
   static const recipes = 'recipes';
   static const recipeDetail = 'recipe-detail';
+  static const savedRecipes = 'saved-recipes';
   static const profile = 'profile';
 }

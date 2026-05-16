@@ -34,6 +34,8 @@ class HomeTest < ActionDispatch::IntegrationTest
     assert_equal [ "Prepara el farcit" ], home_recipe["steps"].map { |item| item["description"] }
     assert_equal true, home_recipe["liked_by_current_user"]
     assert_equal true, home_recipe["saved_by_current_user"]
+    assert home_recipe["current_user_like_id"].present?
+    assert home_recipe["current_user_saved_recipe_id"].present?
   end
 
   test "following feed only returns recipes from followed users" do

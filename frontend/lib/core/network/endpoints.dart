@@ -5,4 +5,6 @@ abstract final class Endpoints {
   static const me = '/auth/me';
   static const home = '/home';
   static const recipes = '/recipes';
+  static const userRecipeLikes = '/user_recipe_likes';
+  static const userSavedRecipes = '/user_saved_recipes';
 }

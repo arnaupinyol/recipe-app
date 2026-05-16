@@ -4,6 +4,8 @@ class HomeRecipeSerializer
     ingredients = recipe.recipe_ingredients.sort_by(&:id)
     steps = recipe.steps.sort_by(&:order_number)
     utensils = recipe.utensils.sort_by(&:name)
+    current_user_like = current_user_like_for(recipe, current_user)
+    current_user_saved_recipe = current_user_saved_recipe_for(recipe, current_user)
 
     {
       id: recipe.id,
@@ -58,22 +60,36 @@ class HomeRecipeSerializer
       end,
       liked_by_current_user: liked_by_current_user?(recipe, current_user),
       saved_by_current_user: saved_by_current_user?(recipe, current_user),
+      current_user_like_id: current_user_like&.id,
+      current_user_saved_recipe_id: current_user_saved_recipe&.id,
       created_at: recipe.created_at,
       updated_at: recipe.updated_at
     }
   end
 
   def self.liked_by_current_user?(recipe, current_user)
-    return false unless current_user
-
-    recipe.user_recipe_likes.any? { |like| like.user_id == current_user.id }
+    current_user_like_for(recipe, current_user).present?
   end
   private_class_method :liked_by_current_user?
 
   def self.saved_by_current_user?(recipe, current_user)
     return false unless current_user
 
-    recipe.user_saved_recipes.any? { |saved_recipe| saved_recipe.user_id == current_user.id }
+    current_user_saved_recipe_for(recipe, current_user).present?
   end
   private_class_method :saved_by_current_user?
+
+  def self.current_user_like_for(recipe, current_user)
+    return unless current_user
+
+    recipe.user_recipe_likes.find { |like| like.user_id == current_user.id }
+  end
+  private_class_method :current_user_like_for
+
+  def self.current_user_saved_recipe_for(recipe, current_user)
+    return unless current_user
+
+    recipe.user_saved_recipes.find { |saved_recipe| saved_recipe.user_id == current_user.id }
+  end
+  private_class_method :current_user_saved_recipe_for
 end

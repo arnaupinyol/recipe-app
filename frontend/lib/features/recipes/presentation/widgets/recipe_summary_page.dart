@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/assets/app_assets.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../shared/widgets/design_system/app_asset_icon.dart';
+import '../../application/home_recipes_provider.dart';
+import '../../data/home_recipes_repository.dart';
 import 'home_recipe_models.dart';
 
 class RecipeSummaryPage extends StatelessWidget {
@@ -197,10 +200,47 @@ class _InfoMetric extends StatelessWidget {
   }
 }
 
-class _RecipeActions extends StatelessWidget {
+class _RecipeActions extends ConsumerStatefulWidget {
   const _RecipeActions({required this.recipe});
 
   final HomeRecipe recipe;
+
+  @override
+  ConsumerState<_RecipeActions> createState() => _RecipeActionsState();
+}
+
+class _RecipeActionsState extends ConsumerState<_RecipeActions> {
+  late bool _isLiked;
+  late bool _isBookmarked;
+  late int _likesCount;
+  late int _savesCount;
+  int? _likeId;
+  int? _savedRecipeId;
+  var _isUpdatingLike = false;
+  var _isUpdatingSave = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _syncFromRecipe();
+  }
+
+  @override
+  void didUpdateWidget(covariant _RecipeActions oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.recipe != widget.recipe) {
+      _syncFromRecipe();
+    }
+  }
+
+  void _syncFromRecipe() {
+    _isLiked = widget.recipe.isLiked;
+    _isBookmarked = widget.recipe.isBookmarked;
+    _likesCount = widget.recipe.likesCount;
+    _savesCount = widget.recipe.savesCount;
+    _likeId = widget.recipe.currentUserLikeId;
+    _savedRecipeId = widget.recipe.currentUserSavedRecipeId;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -208,20 +248,24 @@ class _RecipeActions extends StatelessWidget {
       padding: const EdgeInsets.only(right: 12),
       child: Column(
         children: [
-          AppAssetIcon(
-            recipe.isLiked
+          _ActionCounterButton(
+            semanticLabel: _isLiked ? 'Treure like' : 'Donar like',
+            asset: _isLiked
                 ? AppAssets.recipeHeartFullIcon
                 : AppAssets.recipeHeartEmptyIcon,
-            size: 48,
-            color: AppColors.brandPrimary,
+            count: _likesCount,
+            isBusy: _isUpdatingLike,
+            onPressed: _toggleLike,
           ),
-          const SizedBox(height: 10),
-          AppAssetIcon(
-            recipe.isBookmarked
+          const SizedBox(height: 8),
+          _ActionCounterButton(
+            semanticLabel: _isBookmarked ? 'Treure de guardats' : 'Guardar',
+            asset: _isBookmarked
                 ? AppAssets.recipeBookmarkFullIcon
                 : AppAssets.recipeBookmarkEmptyIcon,
-            size: 48,
-            color: AppColors.brandPrimary,
+            count: _savesCount,
+            isBusy: _isUpdatingSave,
+            onPressed: _toggleSave,
           ),
           const SizedBox(height: 10),
           const AppAssetIcon(
@@ -230,6 +274,167 @@ class _RecipeActions extends StatelessWidget {
             color: AppColors.brandPrimary,
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _toggleLike() async {
+    if (_isUpdatingLike) {
+      return;
+    }
+
+    setState(() => _isUpdatingLike = true);
+    final repository = ref.read(homeRecipesRepositoryProvider);
+
+    try {
+      if (_isLiked) {
+        final likeId = _likeId;
+        if (likeId == null) {
+          return;
+        }
+
+        await repository.unlikeRecipe(likeId);
+        if (!mounted) {
+          return;
+        }
+
+        setState(() {
+          _isLiked = false;
+          _likeId = null;
+          _likesCount = _likesCount > 0 ? _likesCount - 1 : 0;
+        });
+      } else {
+        final likeId = await repository.likeRecipe(widget.recipe.id);
+        if (!mounted) {
+          return;
+        }
+
+        setState(() {
+          _isLiked = true;
+          _likeId = likeId;
+          _likesCount += 1;
+        });
+      }
+
+      _refreshHomeFeeds();
+    } on HomeRecipesException catch (error) {
+      _showActionError(error.message);
+    } finally {
+      if (mounted) {
+        setState(() => _isUpdatingLike = false);
+      }
+    }
+  }
+
+  Future<void> _toggleSave() async {
+    if (_isUpdatingSave) {
+      return;
+    }
+
+    setState(() => _isUpdatingSave = true);
+    final repository = ref.read(homeRecipesRepositoryProvider);
+
+    try {
+      if (_isBookmarked) {
+        final savedRecipeId = _savedRecipeId;
+        if (savedRecipeId == null) {
+          return;
+        }
+
+        await repository.unsaveRecipe(savedRecipeId);
+        if (!mounted) {
+          return;
+        }
+
+        setState(() {
+          _isBookmarked = false;
+          _savedRecipeId = null;
+          _savesCount = _savesCount > 0 ? _savesCount - 1 : 0;
+        });
+      } else {
+        final savedRecipeId = await repository.saveRecipe(widget.recipe.id);
+        if (!mounted) {
+          return;
+        }
+
+        setState(() {
+          _isBookmarked = true;
+          _savedRecipeId = savedRecipeId;
+          _savesCount += 1;
+        });
+      }
+
+      _refreshHomeFeeds();
+    } on HomeRecipesException catch (error) {
+      _showActionError(error.message);
+    } finally {
+      if (mounted) {
+        setState(() => _isUpdatingSave = false);
+      }
+    }
+  }
+
+  void _refreshHomeFeeds() {
+    ref.invalidate(homeRecipesProvider(HomeFeed.forYou));
+    ref.invalidate(homeRecipesProvider(HomeFeed.following));
+    ref.invalidate(savedRecipesProvider);
+  }
+
+  void _showActionError(String message) {
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+}
+
+class _ActionCounterButton extends StatelessWidget {
+  const _ActionCounterButton({
+    required this.semanticLabel,
+    required this.asset,
+    required this.count,
+    required this.isBusy,
+    required this.onPressed,
+  });
+
+  final String semanticLabel;
+  final String asset;
+  final int count;
+  final bool isBusy;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      child: InkResponse(
+        onTap: isBusy ? null : onPressed,
+        radius: 28,
+        child: Opacity(
+          opacity: isBusy ? 0.55 : 1,
+          child: SizedBox(
+            width: 52,
+            child: Column(
+              children: [
+                AppAssetIcon(asset, size: 44, color: AppColors.brandPrimary),
+                const SizedBox(height: 2),
+                Text(
+                  count.toString(),
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: AppColors.brandPrimary,
+                    fontWeight: FontWeight.w800,
+                    height: 1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

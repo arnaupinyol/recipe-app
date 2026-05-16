@@ -4,13 +4,27 @@ module Api
     before_action :set_user_saved_recipe, only: [ :show, :update, :destroy ]
 
     def index
-      saved_recipes = user_saved_recipes_scope.order(created_at: :desc)
+      saved_recipes = user_saved_recipes_scope
+                      .includes(
+                        recipe: [
+                          :user,
+                          :categories,
+                          :comments,
+                          :user_recipe_likes,
+                          :user_saved_recipes,
+                          { utensils: { image_attachment: :blob } },
+                          { recipe_images: { image_attachment: :blob } },
+                          { recipe_ingredients: { ingredient: { image_attachment: :blob } } },
+                          { steps: { step_images: { image_attachment: :blob } } }
+                        ]
+                      )
+                      .order(created_at: :desc)
 
-      render_success({ user_saved_recipes: saved_recipes.map { |saved_recipe| UserSavedRecipeSerializer.render(saved_recipe) } })
+      render_success({ user_saved_recipes: saved_recipes.map { |saved_recipe| render_saved_recipe(saved_recipe) } })
     end
 
     def show
-      render_success({ user_saved_recipe: UserSavedRecipeSerializer.render(@user_saved_recipe) })
+      render_success({ user_saved_recipe: render_saved_recipe(@user_saved_recipe) })
     end
 
     def create
@@ -19,7 +33,7 @@ module Api
       saved_recipe = current_user.user_saved_recipes.new(user_saved_recipe_params)
 
       if saved_recipe.save
-        render_success({ user_saved_recipe: UserSavedRecipeSerializer.render(saved_recipe) }, status: :created)
+        render_success({ user_saved_recipe: render_saved_recipe(saved_recipe) }, status: :created)
       else
         render_error("Saved recipe creation failed", details: normalized_errors(saved_recipe))
       end
@@ -29,7 +43,7 @@ module Api
       return unless ensure_visible_recipe_param!("Saved recipe update failed")
 
       if @user_saved_recipe.update(user_saved_recipe_params)
-        render_success({ user_saved_recipe: UserSavedRecipeSerializer.render(@user_saved_recipe) })
+        render_success({ user_saved_recipe: render_saved_recipe(@user_saved_recipe) })
       else
         render_error("Saved recipe update failed", details: normalized_errors(@user_saved_recipe))
       end
@@ -66,6 +80,10 @@ module Api
 
     def user_saved_recipe_params
       params.require(:user_saved_recipe).permit(:recipe_id)
+    end
+
+    def render_saved_recipe(saved_recipe)
+      UserSavedRecipeSerializer.render(saved_recipe, current_user: current_user, base_url: request.base_url)
     end
 
     def normalized_errors(record)

@@ -89,8 +89,15 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
                   child: BottomNavigation(
                     selectedIndex: 0,
                     onDestinationSelected: (index) {
-                      if (index == 4) {
-                        context.go(RoutePaths.profile);
+                      switch (index) {
+                        case 0:
+                          break;
+                        case 3:
+                          context.go(RoutePaths.savedRecipes);
+                          break;
+                        case 4:
+                          context.go(RoutePaths.profile);
+                          break;
                       }
                     },
                   ),

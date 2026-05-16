@@ -15,6 +15,7 @@ class UserSavedRecipesTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_equal 1, response_json["user_saved_recipes"].length
     assert_equal recipe_1.id, response_json.dig("user_saved_recipes", 0, "recipe_id")
+    assert_equal "Soup", response_json.dig("user_saved_recipes", 0, "recipe", "title")
   end
 
   test "shows an owned saved recipe" do

@@ -28,3 +28,7 @@ final homeRecipesProvider = FutureProvider.family<List<HomeRecipe>, HomeFeed>((
       .watch(homeRecipesRepositoryProvider)
       .fetchHomeRecipes(feed: feed.apiValue);
 });
+
+final savedRecipesProvider = FutureProvider<List<HomeRecipe>>((ref) {
+  return ref.watch(homeRecipesRepositoryProvider).fetchSavedRecipes();
+});
